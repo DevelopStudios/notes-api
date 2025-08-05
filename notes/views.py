@@ -4,6 +4,10 @@ from rest_framework.response import Response
 from .models import Note, Tag
 from .serializers import NoteSerializer,TagSerializer
 from django.db.models import Q
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .serializers import NoteSerializer, TagSerializer, UserSerializer # Make sure UserSerializer is imported
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
@@ -54,3 +58,10 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     #Ensure users only see tags asscociated with their notes
     def get_queryset(self):
         return Tag.objects.filter(note__user=self.request.user).distinct().order_by('name')
+    
+class UserDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)

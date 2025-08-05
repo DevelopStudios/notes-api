@@ -56,3 +56,8 @@ class NoteSerializer(serializers.ModelSerializer):
                     tag, created = Tag.objects.get_or_create(name=tag_name.lower())
                     instance.tags.add(tag)
             return instance
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id','username','email']
