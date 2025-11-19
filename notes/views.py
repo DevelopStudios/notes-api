@@ -37,16 +37,21 @@ class NoteViewSet(viewsets.ModelViewSet):
         Requires a 'q' query parameter
         """
         query = request.query_params.get('q','')
-        if not query:
-            return Response({"detail":"Please provide a 'q' query parameter for search"})
-        # Filter notes belonging to the current user
+        # Start with the base queryset
         queryset = self.get_queryset()
+        if not query:
+            return Response({"count":0, "results":[]})
         #Perform case-insensitive search across title, content and tag names
         search_results = queryset.filter(
             Q(title__icontains = query)|
             Q(content__icontains = query)|
             Q(tags__name__icontains = query)
         ).distinct() #Use distinct to avoid duplicate notes if they match multiple tags or fields
+        page = self.paginate_queryset(search_results)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        
         serializer = self.get_serializer(search_results, many=True)
         return Response(serializer.data)
 
