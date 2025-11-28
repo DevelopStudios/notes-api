@@ -57,7 +57,17 @@ class NoteSerializer(serializers.ModelSerializer):
                     instance.tags.add(tag)
             return instance
 
-class UserSerializer(serializers.ModelSerializer):
+class UserRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
         model = User
-        fields = ['id','username','email']
+        fields = ['username','email','password']
+    
+    def create(self, validate_data):
+        user = User.objects.create_user(
+            username=validate_data['username'],
+            email = validate_data.get('email', ''),
+            password = validate_data['password']
+        )
+        return user

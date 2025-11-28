@@ -1,13 +1,12 @@
-from rest_framework import viewsets,permissions, filters
+from rest_framework import viewsets,permissions, filters, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Note, Tag
-from .serializers import NoteSerializer,TagSerializer
 from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .serializers import NoteSerializer, TagSerializer, UserSerializer # Make sure UserSerializer is imported
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .serializers import NoteSerializer, TagSerializer, UserSerializer, UserRegisterSerializer # Make sure UserSerializer is imported
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
@@ -70,3 +69,7 @@ class UserDetailsView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+
+class UserRegistrationView(generics.CreateAPIView):
+    serializer_class = UserRegisterSerializer
+    permission_classes = [AllowAny]
