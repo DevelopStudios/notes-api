@@ -6,7 +6,14 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import NoteSerializer, TagSerializer, UserSerializer, UserRegisterSerializer # Make sure UserSerializer is imported
+from .serializers import NoteSerializer, TagSerializer, UserSerializer, UserRegisterSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.mail import send_mail
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.models import User
+from django.utils.http import urlsafe_base64_decode
+
 
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
@@ -73,3 +80,72 @@ class UserDetailsView(APIView):
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
     permission_classes = [AllowAny]
+
+class PasswordResetRequestView(generics.GenericAPIView):
+    serializer_class = PasswordResetRequestSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.filter(email=email).first()
+            print(User.objects.values())
+            if user:
+                # 1. Generate the Golden Ticket
+                token_generator = PasswordResetTokenGenerator()
+                token = token_generator.make_token(user)
+                
+                # 2. Encode the User ID (Security practice)
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+                # 3. Create the Link (This points to your ANGULAR app)
+                # Example: http://localhost:4200/reset-password/MjQ/af45-3221...
+                reset_link = f"http://localhost:4200/reset-password/{uid}/{token}/"
+
+                # 4. Send Email (Prints to console in dev)
+                send_mail(
+                    'Password Reset Request',
+                    f'Click this link to reset your password: {reset_link}',
+                    'noreply@notekeeper.com',
+                    [email],
+                    fail_silently=False,
+                )
+
+            # Security Best Practice: Always return 200 OK.
+            # Don't tell hackers if the email exists or not.
+            return Response({"message": "If your email exists, a link has been sent."})
+        
+        return Response(serializer.errors, status=400)
+    
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            uid = serializer.validated_data['uid']
+            token = serializer.validated_data['token']
+            new_password = serializer.validated_data['new_password']
+
+            try:
+                # 1. Decode the User ID
+                user_id = urlsafe_base64_decode(uid).decode()
+                user = User.objects.get(pk=user_id)
+
+                # 2. Verify the Token
+                token_generator = PasswordResetTokenGenerator()
+                if not token_generator.check_token(user, token):
+                    return Response({"error": "Invalid or expired token"}, status=400)
+
+                # 3. Set the New Password
+                user.set_password(new_password)
+                user.save()
+                return Response({"message": "Password has been reset successfully."})
+
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                return Response({"error": "Invalid user ID"}, status=400)
+
+        return Response(serializer.errors, status=400)

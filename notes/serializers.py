@@ -71,3 +71,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             password = validate_data['password']
         )
         return user
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    new_password = serializers.CharField(write_only=True)
+    uid = serializers.CharField()
+    token = serializers.CharField()
