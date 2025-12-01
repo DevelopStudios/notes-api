@@ -101,7 +101,7 @@ class PasswordResetRequestView(generics.GenericAPIView):
 
                 # 3. Create the Link (This points to your ANGULAR app)
                 # Example: http://localhost:4200/reset-password/MjQ/af45-3221...
-                reset_link = f"http://localhost:4200/reset-password/{uid}/{token}/"
+                reset_link = f"http://localhost:4200/auth/reset-password/{uid}/{token}/"
 
                 # 4. Send Email (Prints to console in dev)
                 send_mail(
