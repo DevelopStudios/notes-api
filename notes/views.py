@@ -18,12 +18,9 @@ from django.utils.http import urlsafe_base64_decode
 class NoteViewSet(viewsets.ModelViewSet):
     queryset = Note.objects.all()
     serializer_class = NoteSerializer
-    permission_classes = [permissions.IsAuthenticated] #Only authenticated users can access
-
-    #Ensure users only see and manage their own notes
+    permission_classes = [permissions.IsAuthenticated]
     def get_queryset(self):
         return Note.objects.filter(user=self.request.user).order_by('-updated_at')
-    #Override perform_create to automatically set the user for a new note
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -43,16 +40,14 @@ class NoteViewSet(viewsets.ModelViewSet):
         Requires a 'q' query parameter
         """
         query = request.query_params.get('q','')
-        # Start with the base queryset
         queryset = self.get_queryset()
         if not query:
             return Response({"count":0, "results":[]})
-        #Perform case-insensitive search across title, content and tag names
         search_results = queryset.filter(
             Q(title__icontains = query)|
             Q(content__icontains = query)|
             Q(tags__name__icontains = query)
-        ).distinct() #Use distinct to avoid duplicate notes if they match multiple tags or fields
+        ).distinct()
         page = self.paginate_queryset(search_results)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -64,9 +59,7 @@ class NoteViewSet(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = [permissions.IsAuthenticated] #Only authenticated Users
-
-    #Ensure users only see tags asscociated with their notes
+    permission_classes = [permissions.IsAuthenticated] 
     def get_queryset(self):
         return Tag.objects.filter(note__user=self.request.user).distinct().order_by('name')
     
@@ -92,18 +85,11 @@ class PasswordResetRequestView(generics.GenericAPIView):
             user = User.objects.filter(email=email).first()
             print(User.objects.values())
             if user:
-                # 1. Generate the Golden Ticket
                 token_generator = PasswordResetTokenGenerator()
                 token = token_generator.make_token(user)
-                
-                # 2. Encode the User ID (Security practice)
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
-
-                # 3. Create the Link (This points to your ANGULAR app)
-                # Example: http://localhost:4200/reset-password/MjQ/af45-3221...
                 reset_link = f"http://localhost:4200/auth/reset-password/{uid}/{token}/"
 
-                # 4. Send Email (Prints to console in dev)
                 send_mail(
                     'Password Reset Request',
                     f'Click this link to reset your password: {reset_link}',
@@ -112,8 +98,6 @@ class PasswordResetRequestView(generics.GenericAPIView):
                     fail_silently=False,
                 )
 
-            # Security Best Practice: Always return 200 OK.
-            # Don't tell hackers if the email exists or not.
             return Response({"message": "If your email exists, a link has been sent."})
         
         return Response(serializer.errors, status=400)
@@ -131,16 +115,12 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             new_password = serializer.validated_data['new_password']
 
             try:
-                # 1. Decode the User ID
                 user_id = urlsafe_base64_decode(uid).decode()
                 user = User.objects.get(pk=user_id)
 
-                # 2. Verify the Token
                 token_generator = PasswordResetTokenGenerator()
                 if not token_generator.check_token(user, token):
                     return Response({"error": "Invalid or expired token"}, status=400)
-
-                # 3. Set the New Password
                 user.set_password(new_password)
                 user.save()
                 return Response({"message": "Password has been reset successfully."})
