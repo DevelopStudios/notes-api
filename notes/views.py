@@ -71,7 +71,10 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = [permissions.IsAuthenticated] 
     def get_queryset(self):
-        return Tag.objects.filter(note__user=self.request.user).distinct().order_by('name')
+        return Tag.objects.filter(
+            note__user=self.request.user,
+            note__is_archived=False
+        ).distinct().order_by('name')
 
 class UserDetailsView(APIView):
     permission_classes = [IsAuthenticated]
