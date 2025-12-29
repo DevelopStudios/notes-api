@@ -21,6 +21,12 @@ class NoteViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     def get_queryset(self):
         queryset = Note.objects.filter(user=self.request.user).order_by('-updated_at')
+        if self.action == 'archived':
+            return queryset.filter(is_archived=True)
+        
+        if self.action == 'list':
+            queryset = queryset.filter(is_archived=False)
+        
         tag_id = self.request.query_params.get('tag_id')
         if(tag_id):
             queryset = queryset.filter(tags__id=tag_id).distinct()
