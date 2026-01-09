@@ -20,9 +20,9 @@ COPY . .
 RUN python manage.py collectstatic --noinput --clear
 
 # 7. Expose the port (Kinsta uses 8080 internally often, but 8000 is fine if configured)
-EXPOSE 8000
+EXPOSE 8080
 
 # 8. Run Gunicorn (Production Server)
 # 'config.wsgi' refers to the folder 'config' containing 'wsgi.py'
 # Check your folder structure: if your main folder is named 'config', use 'config.wsgi'
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "config.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "config.wsgi:application"]
