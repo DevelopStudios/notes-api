@@ -6,13 +6,15 @@ from django.db.models import Q
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import NoteSerializer, TagSerializer, UserSerializer, UserRegisterSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from .serializers import ChangePasswordSerializer, NoteSerializer, TagSerializer, UserSerializer, UserRegisterSerializer, PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.mail import send_mail
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.models import User
 from django.utils.http import urlsafe_base64_decode
+
+from notes import serializers
 
 
 class NoteViewSet(viewsets.ModelViewSet):
@@ -141,4 +143,21 @@ class PasswordResetConfirmView(generics.GenericAPIView):
             except (TypeError, ValueError, OverflowError, User.DoesNotExist):
                 return Response({"error": "Invalid user ID"}, status=400)
 
+        return Response(serializer.errors, status=400)
+    
+class ChangePasswordView(generics.UpdateAPIView):
+    serializer_class = ChangePasswordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+    
+    def update(self, request, *args, **kwargs):
+        user = self.get_object()
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            user.set_password(serializer.validated_data['new_password'])
+            user.save()
+            return Response({"message": "Password updated successfully"}, status=200)
         return Response(serializer.errors, status=400)
