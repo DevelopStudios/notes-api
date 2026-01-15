@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Third Party
     "rest_framework",
     "rest_framework_simplejwt",
     "notes"
@@ -47,7 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware", # <--- ADDED: Serves static files in prod
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -141,6 +140,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Example: "https://my-frontend.kinsta.page"
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://notes-api-5eyf5.kinsta.app",
 ]
 
 # 2. TEMPORARY: Allow everyone (Useful for first deployment debug)
