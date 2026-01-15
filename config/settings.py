@@ -82,6 +82,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # Auto-switch between SQLite (Local) and Postgres (Kinsta)
 DATABASES = {
     'default': dj_database_url.config(
+        env='DB_URL',
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
         conn_max_age=600
     )
